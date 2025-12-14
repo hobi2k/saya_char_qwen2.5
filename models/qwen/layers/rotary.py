@@ -148,7 +148,7 @@ class Qwen2RotaryEmbedding(nn.Module):
         position_ids_expanded = position_ids[:, None, :].float()
         # shape: (B, 1, S)
 
-        # (중요) dtype 관련:
+        # dtype 관련:
         # - cos/sin 계산은 수치적으로 민감할 수 있다.
         # - 원문(HF) 구현은 float32에서 cos/sin을 만든 뒤, x.dtype으로 되돌린다.
         # - 이유: fp16/bf16에서 cos/sin이 누적 오차/언더플로를 일으킬 수 있음
@@ -159,7 +159,7 @@ class Qwen2RotaryEmbedding(nn.Module):
         position_ids_expanded = position_ids_expanded.to(device=device, dtype=torch.float32)
 
         # freqs = inv_freq @ position_ids
-        #
+
         # inv_freq_expanded: (B, D/2, 1)
         # position_ids_expanded: (B, 1, S)
         # matmul 결과: (B, D/2, S)
@@ -211,8 +211,8 @@ def rotate_half(x: torch.Tensor) -> torch.Tensor:
         shape (..., D)
     """
 
-    # x[..., :D/2]  -> x1
-    # x[..., D/2:]  -> x2
+    # x[..., :D/2] -> x1
+    # x[..., D/2:] -> x2
     # 최종: [-x2, x1]
     d = x.shape[-1]
     if d % 2 != 0:
@@ -239,7 +239,7 @@ def apply_rotary_pos_emb(
         k_rot = k * cos + rotate_half(k) * sin
 
     중요한 shape 조건:
-        q, k: (B, H, S, D)  (일반적)
+        q, k: (B, H, S, D)
         cos,sin: (B, S, D)
 
     cos/sin을 q/k에 곱하려면, H 차원에 대해 브로드캐스트가 필요하므로
@@ -260,7 +260,6 @@ def apply_rotary_pos_emb(
     Returns:
         (q_rot, k_rot)  각 shape는 입력 q/k와 동일
     """
-
     # cos: (B, S, D) -> (B, 1, S, D)  [unsqueeze_dim=1]
     # 이렇게 하면 q: (B, H, S, D)와 곱할 때 H 차원으로 자동 broadcast 가능.
     cos = cos.unsqueeze(unsqueeze_dim)
